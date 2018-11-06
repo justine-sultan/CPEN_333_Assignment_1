@@ -6,6 +6,8 @@
 #include    "..\GSDataStructures.h"
 #include <chrono> 
 
+bool PUMP_DEBUG = false;
+
 Pump::Pump(int myNumber, char* pumpDP, char* pumpPipe)
 {
 	_myNumber = myNumber;
@@ -13,18 +15,51 @@ Pump::Pump(int myNumber, char* pumpDP, char* pumpPipe)
 	_pumpPipe = pumpPipe; 
 
 	_tank = new Tank();
+
+	//get y cursor
+	switch (_myNumber) {
+	case 1:
+		_y_cursor = 9;
+		break;
+	case 2:
+		_y_cursor = 18;
+		break;
+	case 3:
+		_y_cursor = 27;
+		break;
+	case 4:
+		_y_cursor = 36;
+		break;
+	}
 }
 
-int Pump::pipeCommThread(void *ThreadArgs)	//thread for reading/writing to other processes
+int Pump::updateDOS(void *ThreadArgs)	//thread for reading/writing to other processes
 {
-	while (1) {}
+	CMutex  mDOS("pump_DOS_window");
+	mDOS.Wait();
+	MOVE_CURSOR(0, 4);
+	printf("check\n");
+	fflush(stdout);
+	mDOS.Signal();
+
+	while (1) {
+		mDOS.Wait();
+		MOVE_CURSOR(0, 4);
+		printf("Tank 1: Regular-87   | %.2f              \n", _tank->getPrice(0));
+		printf("Tank 2: MidGrade-89  | %.2f              \n", _tank->getPrice(1));
+		printf("Tank 3: Premium-91   | %.2f              \n", _tank->getPrice(2));
+		printf("Tank 4: Super-99     | %.2f              \n\n", _tank->getPrice(3));
+		fflush(stdout);
+		mDOS.Signal();
+	}
 	return true; 
 }
 
 bool Pump::pumpFuel(int tank, int amount)
 {
-	printf("Pump %d pumping %d of fuel from tank %d....\n", _myNumber, amount, tank);
+	CMutex  mDOS("pump_DOS_window");
 	bool result = false; 
+	float price = _tank->getPrice(tank); 
 
 	for (int i = 0; i < amount * 2; i++) {
 		Sleep(1000);
@@ -32,6 +67,13 @@ bool Pump::pumpFuel(int tank, int amount)
 		if (result == false) {
 			return result; 
 		}
+
+		mDOS.Wait(); 
+		MOVE_CURSOR(15, _y_cursor + 6);
+		printf("Your total bill: %.2f \n", price*(i+1)*0.5);
+		fflush(stdout);
+		mDOS.Signal();
+
 	}
 
 	return result; 
@@ -57,28 +99,32 @@ void Pump::getTimeStamp(char* timeString) {
 int Pump::main(void)
 {
 	CRendezvous  r1("MyRendezvous", 6);	//GSC, 4 pumps, and customer
+	CMutex  mDOS("pump_DOS_window");
 
 	//pump to GSC comm set-up (pump producer, GSC consumer)
 	//note that the GSC also uses the donePump event under the customer to pump comm set-up section
 	CSemaphore		ps("producerPump" + std::to_string(_myNumber), 0, 1);    // semaphore with initial value 0 and max value 1
 	CSemaphore		cs("consumerPump" + std::to_string(_myNumber), 1, 1);    // semaphore with initial value 1 and max value 1
-	printf("Pump %d linking to pump/GCS datapool, name: %s....\n", _myNumber, _pumpDP);
+	if (PUMP_DEBUG) { printf("Pump %d linking to pump/GCS datapool, name: %s....\n", _myNumber, _pumpDP); }
 	CDataPool datapool_Pump(_pumpDP, sizeof(struct pumpDatapool));
 	struct pumpDatapool *dpPump = (struct pumpDatapool *)(datapool_Pump.LinkDataPool());
-	printf("Pump linked to datapool: %s at address %p.....\n", _pumpDP, dpPump);
+	if (PUMP_DEBUG) { printf("Pump linked to datapool: %s at address %p.....\n", _pumpDP, dpPump); }
 
 	//customer to pump comm set-up
 	CEvent donePump("Event_donePump" + std::to_string(_myNumber));	//event to let GSC/customer know that pump has finished pumping gas. note that the GSC also uses this
-	printf("Pump %d creating pump/customer pipeline, name: %s....\n", _myNumber, _pumpPipe);
+	if (PUMP_DEBUG) { printf("Pump %d creating pump/customer pipeline, name: %s....\n", _myNumber, _pumpPipe); }
 	CTypedPipe<struct customerInfo>	pipeline(_pumpPipe, 1024);
 	struct customerInfo custInfo; 
 
 	//GSC to pump comm set-up
 	CEvent startPump("Event_startPump" + std::to_string(_myNumber));	//event to signal pump to start pumping gas for customer
-	//TODO: do i still need this class thread for comm?
-	//maybe eventually use it for displaying to DOS window
-	ClassThread<Pump> pipeComm(this, &Pump::pipeCommThread, ACTIVE, NULL);
-	
+
+	ClassThread<Pump> dosThread(this, &Pump::updateDOS, SUSPENDED, NULL);
+	if (_myNumber == 1) {
+		//pump object 1 updates pump DOS window with price (don't need 4 versions of this thread to do the same thing)
+		dosThread.Resume();
+	}
+
 	r1.Wait();	//wait for other processes before starting 
 
 	//Testing area for lab 3/4--------
@@ -87,8 +133,24 @@ int Pump::main(void)
 	while (1) {
 		pipeline.Read(&custInfo);	
 		//TODO add data struct to recieve data
-		printf("\nPump %d recieved info from customer \n", _myNumber);
+		if (PUMP_DEBUG) { printf("\nPump %d recieved info from customer \n", _myNumber); }
 
+		//display customer info to Pump Display, then send it
+		mDOS.Wait();
+		MOVE_CURSOR(0, _y_cursor + 2);
+		printf("Customer at pump. Waiting for authorization. \n");
+		MOVE_CURSOR(15, _y_cursor + 3);
+		printf("Name: %s \n", custInfo.name);
+		MOVE_CURSOR(15, _y_cursor + 4);
+		printf("Credit Card #: %d \n", custInfo.creditCard);
+		MOVE_CURSOR(15, _y_cursor + 5);
+		printf("Fuel Type and Amount: %d, %d \n", custInfo.fuelType, custInfo.fuelAmount);
+		MOVE_CURSOR(15, _y_cursor + 6);
+		printf("Your total bill: 0.00 \n");
+		fflush(stdout);
+		mDOS.Signal();
+
+		//send customer info to GSC
 		cs.Wait();
 		strcpy_s(dpPump->name, 20, custInfo.name); //names must be 19 characters or less (this accounts for null character)
 		dpPump->creditCard = custInfo.creditCard;
@@ -98,17 +160,42 @@ int Pump::main(void)
 		ps.Signal();
 
 		startPump.Wait();	//wait for GSC authorization to pump gas
-		/*printf("fuelAmount %d\n ", custInfo.fuelAmount);
-		int amount = custInfo.fuelAmount; 
-		printf("fuelAmount %d \n", custInfo.fuelAmount);*/
-		pumpFuel(custInfo.fuelType, custInfo.fuelAmount);
+		
+		mDOS.Wait();
+		MOVE_CURSOR(0, _y_cursor + 1);
+		printf("Pump enabled                                       \n");
+		MOVE_CURSOR(0, _y_cursor + 2);
+		printf("Transaction Authorizatized. Pumping fuel....       \n");
+		fflush(stdout);
+		mDOS.Signal();
+
+		pumpFuel((custInfo.fuelType - 1), custInfo.fuelAmount);
 		//TODO: for now, i don't think that the pumpFuel needs to be concurrent with this thread? may need to change if problems arise
+		
+		mDOS.Wait();
+		MOVE_CURSOR(0, _y_cursor + 1);
+		printf("Pump disabled                                      \n");
+		MOVE_CURSOR(0, _y_cursor + 2);
+		printf("No Customer at pump                                \n");
+		MOVE_CURSOR(15, _y_cursor + 3);
+		printf("--                                                 \n");
+		MOVE_CURSOR(15, _y_cursor + 4);
+		printf("--                                                 \n");
+		MOVE_CURSOR(15, _y_cursor + 5);
+		printf("--                                                 \n");
+		MOVE_CURSOR(15, _y_cursor + 6);
+		printf("--                                                 \n");
+		fflush(stdout);
+		mDOS.Signal();
+
 		donePump.Signal();	//signal that pump done pumping gas
-		printf("Pump %d is done pumping \n", _myNumber); 
+		if (PUMP_DEBUG) { printf("Pump %d is done pumping \n", _myNumber); }
+		
+	
+
 	}
 	//end test area-----------
 
-	pipeComm.WaitForThread(); 
 	//TODO: need to add rendesvous here??
 
 	return(0);

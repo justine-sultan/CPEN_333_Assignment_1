@@ -19,7 +19,78 @@ struct 	    mydatapooldata {
 
 int   main()
 {
-	printf("Creating pump active objects\n");
+	CMutex  mDOS("pump_DOS_window");
+
+	//set up DOS window:
+	int init = -1;	//placeholder to check cursor placement
+	mDOS.Wait();
+	MOVE_CURSOR(0, 0);
+	printf("CUSTOMER PUMP DISPLAY \n\n");
+
+	printf("FUEL STATUS: \n");
+	printf("Tank and Fuel Grade  | Cost per Liter \n");
+	printf("Tank 1: Regular-87   |                \n");
+	MOVE_CURSOR(23, 4);
+	printf("%d\n", init);
+	printf("Tank 2: MidGrade-89  |                \n");
+	printf("Tank 3: Premium-91   |                \n");
+	printf("Tank 4: Super-99     |                \n\n");
+
+	printf("PUMP 1 STATUS: \n");
+	printf("Pump disabled \n");
+	printf("No Customer at pump \n");
+	printf("Customer Info: -- \n"); //12
+	MOVE_CURSOR(15, 13);
+	printf("-- \n");
+	MOVE_CURSOR(15, 14);
+	printf("-- \n");
+	MOVE_CURSOR(15, 15);
+	printf("-- \n");
+	MOVE_CURSOR(15, 16);
+	printf("-- \n\n");
+
+	printf("PUMP 2 STATUS: \n");
+	printf("Pump disabled \n");
+	printf("No Customer at pump \n");
+	printf("Customer Info: -- \n");
+	MOVE_CURSOR(15, 22);
+	printf("-- \n");
+	MOVE_CURSOR(15, 23);
+	printf("-- \n");
+	MOVE_CURSOR(15, 24);
+	printf("-- \n");
+	MOVE_CURSOR(15, 25);
+	printf("-- \n\n");
+
+	printf("PUMP 3 STATUS: \n");
+	printf("Pump disabled \n");
+	printf("No Customer at pump \n");
+	printf("Customer Info: -- \n");
+	MOVE_CURSOR(15, 31);
+	printf("-- \n");
+	MOVE_CURSOR(15, 32);
+	printf("-- \n");
+	MOVE_CURSOR(15, 33);
+	printf("-- \n");
+	MOVE_CURSOR(15, 34);
+	printf("-- \n\n");
+
+	printf("PUMP 4 STATUS: \n");
+	printf("Pump disabled \n");
+	printf("No Customer at pump \n");
+	printf("Customer Info: -- \n");
+	MOVE_CURSOR(15, 40);
+	printf("-- \n");
+	MOVE_CURSOR(15, 41);
+	printf("-- \n");
+	MOVE_CURSOR(15, 42);
+	printf("-- \n");
+	MOVE_CURSOR(15, 43);
+	printf("-- \n\n");
+
+	fflush(stdout);
+	mDOS.Signal();
+
 	char pump1dp[] = "PumpDP1";
 	char pump1pipe[] = "Pump1Pipeline"; 
 	Pump pump1(1, pump1dp, pump1pipe); 

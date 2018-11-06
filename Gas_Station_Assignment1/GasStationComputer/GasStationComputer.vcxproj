@@ -124,6 +124,9 @@
     <ClCompile Include="..\tank.cpp" />
     <ClCompile Include="GSC_Main.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="README_DemoInfo.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

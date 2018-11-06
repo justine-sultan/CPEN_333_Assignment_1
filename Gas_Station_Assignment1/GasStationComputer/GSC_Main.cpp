@@ -140,8 +140,16 @@ UINT __stdcall tankThread(void *ThreadArgs)
 	// Testing code for Lab3/4---------------------
 	if (GSC_DEBUG) { printf("Viewing levels of fuel in tank 1...\n"); }
 	while (1) {
-		//printf("Level in fuel tank: %f \n", fuelTanks.readAmount(0));
-		//Sleep(500);
+		mDOS.Wait();
+		MOVE_CURSOR(0, 5); 
+		printf("Tank 1: Regular-87   |  %.2f            | %.2f \n", fuelTanks.getPrice(0), fuelTanks.readAmount(0));
+		printf("Tank 2: MidGrade-89  |  %.2f            | %.2f \n", fuelTanks.getPrice(1), fuelTanks.readAmount(1));
+		printf("Tank 3: Premium-91   |  %.2f            | %.2f \n", fuelTanks.getPrice(2), fuelTanks.readAmount(2));
+		printf("Tank 4: Super-99     |  %.2f            | %.2f \n", fuelTanks.getPrice(3), fuelTanks.readAmount(3));
+		fflush(stdout);
+		mDOS.Signal();
+
+		//Sleep(300);		//refreshes every 300 sec - prevent hogging of DOS resource by thread
 	}
 
 	return 0;									// thread ends here
@@ -252,13 +260,16 @@ bool doCommand(std::string commandBuff) {
 		{
 			valid = true; 
 			if (commandBuff[0] == 'e') {
-				//do e stuff
 				index = std::stoi(commandBuff.substr(1, string::npos));
 				CEvent startPump("Event_startPump" + std::to_string(index));	//event to authorise pump to start pumping gas for customer
 				startPump.Signal(); 
 			}
 			if (commandBuff[0] == 'f') {
-				//do f stuff
+				//TODO: replace with something that uses tank thread??
+				//this is causing bug right now - shifting text down
+				index = std::stoi(commandBuff.substr(1, string::npos));
+				Tank fuelTanks;
+				fuelTanks.setAmount(500, index-1); 
 			}
 		}
 	}
@@ -427,7 +438,7 @@ int	main()
 	//TODO: fix ppossible blocking/hang-ups here??
 	while (1) {
 		if (TEST_FOR_KEYBOARD() != 0) {
-			getChar[0] = _getch(); 
+			getChar[0] = _getch(); ///////
 			if (getChar[0] == ' ') {
 				if (commandBuff.size() > maxSize) {
 					mDOS.Wait();
@@ -456,6 +467,7 @@ int	main()
 			}
 
 		}
+		Sleep(50); 
 	}
 
 	p1.WaitForProcess();	//these can't be replaced by rendesvous

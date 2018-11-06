@@ -7,6 +7,7 @@
 
 Customer::Customer(int myNumber, int pumpNumber)
 {
+	//TODO: implement better random numbers
 	_myNumber = myNumber; 
 	char randChar = rand() % 25 + 97;
 	int randIndex = rand() % 10; //random between 0 and 9
@@ -14,7 +15,7 @@ Customer::Customer(int myNumber, int pumpNumber)
 	myName[randIndex] = randChar; 
 	strcpy_s(_info.name, 20, myName);
 	_info.creditCard= rand()%100000000 + 1 + 100000000;
-	_info.fuelType = rand()%4 +1;	//randow of type 0-4
+	_info.fuelType = rand()%4+1;	//random of type 1-4 - need to convert to 0 index
 	_info.fuelAmount = rand()%10 + 1; //random between 1 and 10 liters
 
 	_info.pump = pumpNumber;	

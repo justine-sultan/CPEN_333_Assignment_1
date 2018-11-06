@@ -10,11 +10,12 @@
 class Tank {
 private:
 	//mutex will protect entire datapool 
-	struct tankData{					
-		//fuel types: oct87, oct91, oct100, oct108
+	struct tankData{	
+
+		float _price[4]; //array of prices
 		double tankArray[4]; 
 		//have tanks 0 through 3
-		//ask TA if this structure is ok?
+		
 	};
 
 	CDataPool *_dp;
@@ -28,6 +29,8 @@ public:
 	bool decrement(int tank);		//decrement 0.5 liters from tank. return 1 if succesful, return 0 if fuel tank ran empty 
 	void setAmount(double amount,int tank);		//set tank to amount
 	double readAmount(int tank);		//reads literAmount in tank
+	void setPrice(float price, int tank);			//set price per liter for specified tank
+	float getPrice(int tank);		//returns price of specified tank
 };
 
 #endif 

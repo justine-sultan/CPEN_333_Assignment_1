@@ -14,11 +14,11 @@ private:
 	int _myNumber; 
 	char* _pumpDP; 
 	char* _pumpPipe; 
-
+	int _y_cursor; 
 	Tank *_tank;
-
+	
 	int main(void);
-	int pipeCommThread(void *ThreadArgs); 
+	int updateDOS(void *ThreadArgs); 
 	bool pumpFuel(int tank, int amount);	//pumps amount from tank, returns 1 if success, 0 if ran out of fuel in tank
 	void getTimeStamp(char *timeString); 
 

@@ -14,6 +14,7 @@ Tank::Tank(void) {
 
 	for (int i = 0; i < 4; i++) {
 		_data->tankArray[i] = 500; 
+		_data->_price[i] = 1.00;
 	}
 
 	//DONT INTITIALIZE SHARED DATA  - (e.g. for datapool) 
@@ -77,4 +78,19 @@ double Tank::readAmount(int tank) {
 	double num = _data->tankArray[tank];	// update resource
 	_mutex->Signal();		// release resource
 	return num;
+}
+
+void Tank::setPrice(float price, int tank) {
+	_mutex->Wait(); 
+	_data->_price[tank] = price; 
+	_mutex->Signal();
+	return; 
+}
+
+float Tank::getPrice(int tank) {
+	_mutex->Wait();
+	float price = _data->_price[tank]; 
+	_mutex->Signal();
+
+	return price; 
 }
