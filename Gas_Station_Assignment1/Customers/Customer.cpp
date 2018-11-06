@@ -15,7 +15,7 @@ Customer::Customer(int myNumber, char* pumpPipe)
 	//_info.name= "John_Ab";	//names must be 19 characters or less (this accounts for null character)
 	_info.creditCard= 123123123;
 	_info.fuelType = 0;	//type 0-4
-	_info.fuelAmount = 10;
+	_info.fuelAmount = 5;
 	_info.pump = 1; 
 	printf("Creating customer \n"); 
 }

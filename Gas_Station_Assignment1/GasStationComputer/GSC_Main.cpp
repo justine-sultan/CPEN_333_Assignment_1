@@ -20,6 +20,8 @@ CRendezvous     gscR("gscRendezvous", 3);	//internal rendesvous for GSC's 5 thre
 
 bool GSC_DEBUG = false; 
 vector<transaction*> tr_history;	//vector for storing customer transactions
+bool thDisplayed = false;			//flag indicating if th is displayed
+int long thSize = 0;					//global for storing number of displayed transactions
 
 //thread class for reading pump datapools. TODO: move datapool creation into here as well?
 UINT __stdcall pumpThread(void *ThreadArgs)
@@ -64,7 +66,7 @@ UINT __stdcall pumpThread(void *ThreadArgs)
 		customerTr.creditCard = dpPump->creditCard; 
 		customerTr.fuelType = dpPump->fuelType;
 		customerTr.fuelAmount = dpPump->fuelAmount;
-		strcpy_s(customerTr.timeStamp, 1000, dpPump->timeStamp);
+		strcpy_s(customerTr.timeStamp, 100, dpPump->timeStamp);
 		customerTr.pump = pumpID; 
 		mTr.Wait();
 		tr_history.push_back(&customerTr);
@@ -76,11 +78,11 @@ UINT __stdcall pumpThread(void *ThreadArgs)
 		startPump.Signal();			//authorise pump to start pumping to customer
 		donePump.Wait();			//wait for pump to stop pumping gas
 
-		mDOS.Wait();
-		MOVE_CURSOR(0, 55);
-		printf("finished transaction\n ");
-		fflush(stdout);
-		mDOS.Signal();
+		//mDOS.Wait();
+		//MOVE_CURSOR(0, 55);
+		//printf("finished transaction\n ");
+		//fflush(stdout);
+		//mDOS.Signal();
 		
 	}
 
@@ -106,30 +108,88 @@ UINT __stdcall tankThread(void *ThreadArgs)
 	return 0;									// thread ends here
 }
 
-void displayTH(void) {
+long int displayTH(void) {
 	CMutex  mDOS("gsc_DOS_window");			//mutex to protect writing to the window
 	CMutex  mTr("transaction_history");		//mutex to protect access to transaction_history buffer
+	mTr.Wait();
 	long int size = tr_history.size();
+	mTr.Signal(); 
+	//variables to copy tr_history to - prevent deadlock
+	char name[20];	//names must be 19 characters or less (this accounts for null character)
+	int creditCard;
+	int fuelType;
+	int fuelAmount;
+	int pump;	//chose which pump they go to: 1,2,3 or 4
+	char timeStamp[100];
 
 	mDOS.Wait();
 	MOVE_CURSOR(0, 55);
-	printf("Displaying transaction history (first to last) \npress 'tr' + spacebar to hide. ");
+	printf("Displaying transaction history (first to last) \npress 'th' + spacebar to hide. %i", size);
 	fflush(stdout);
 	mDOS.Signal();
 	
-	for (long int i = 0; i++; i < size) {
+	long int i = 0;
+	while(i<size)
+	{
+		mTr.Wait();
+		strcpy_s(name, 20, tr_history[i]->name);	//names must be 19 characters or less (this accounts for null character)
+		creditCard = tr_history[i]->creditCard;
+		fuelType = tr_history[i]->fuelType;
+		fuelAmount= tr_history[i]->fuelAmount;
+		pump= tr_history[i]->pump;	//chose which pump they go to: 1,2,3 or 4
+		strcpy_s(timeStamp, 100, tr_history[i]->timeStamp); 
+		mTr.Signal(); 
+		
 		mDOS.Wait();
-		MOVE_CURSOR(0, 58);
-		printf("Name: %s \n", tr_history[i]->name);
-		printf("Credit Card #: %d \n", tr_history[i]->creditCard);
-		printf("Fuel Type: %d \n", tr_history[i]->fuelType);
-		printf("Fuel Amount: %d \n", tr_history[i]->fuelAmount);
-		printf("Time of Transaction: %s \n", tr_history[i]->timeStamp);
+		MOVE_CURSOR(0, (58 + i * 7));
+		printf("Name: %s \n", name);
+		printf("Credit Card #: %d \n", creditCard);
+		printf("Fuel Type: %d \n", fuelType);
+		printf("Fuel Amount: %d \n", fuelAmount);
+		printf("Pump: %d \n", pump);
+		printf("Time of Transaction: %s \n\n", timeStamp);
 		fflush(stdout);
 		mDOS.Signal();
+
+		i++; 
 	}
 
-	return; 
+	thDisplayed = true; 
+	return size; 
+}
+
+void hideTH(long int size) {
+	CMutex  mDOS("gsc_DOS_window");			//mutex to protect writing to the window
+	CMutex  mTr("transaction_history");		//mutex to protect access to transaction_history buffer
+
+	mDOS.Wait();
+	MOVE_CURSOR(0, 55);
+	//printf("Displaying transaction history (first to last) \npress 'th' + spacebar to hide. ");
+	printf("                                                                                \n");
+	MOVE_CURSOR(0, 56);
+	printf("                                                                                \n");
+	fflush(stdout);
+	mDOS.Signal();
+
+	long int i = 0;
+	while(i < size) {
+		mDOS.Wait();
+		MOVE_CURSOR(0, (58+i*7)) ;
+		printf("                                                     \n");
+		printf("                                                     \n"); 
+		printf("                                                     \n");
+		printf("                                                     \n");
+		printf("                                                     \n");
+		printf("                                                     \n\n");
+		//printf("Time of Transaction: %s \n\n", timeStamp);
+		fflush(stdout);
+		mDOS.Signal();
+
+		i++; 
+	}
+
+	thDisplayed = false;
+	return;
 }
 
 bool doCommand(std::string commandBuff) {
@@ -139,9 +199,14 @@ bool doCommand(std::string commandBuff) {
 	CMutex  mDOS("gsc_DOS_window");			//mutex to protect writing to the window
 
 	if (commandBuff.size() == 2) {
-		if (commandBuff == "th") {
+		if (commandBuff.compare("th") == 0) {
 			valid = true; 
-			//do th command
+			if (!thDisplayed) {
+				thSize = displayTH();
+			}
+			else {	//if thDisplayed
+				hideTH(thSize); 
+			}
 		}
 		else if ((commandBuff[0] == 'e' || commandBuff[0] == 'f') && (commandBuff[1] == '1' ||
 			commandBuff[1] == '2' || commandBuff[1] == '3' || commandBuff[1] == '4'))
