@@ -1,4 +1,7 @@
-﻿  GSC_Main.cpp
-c:\users\jmvsu\onedrive\documents\school_fall_2018\cpen_333\assignment_1\gas_station_assignment1\gasstationcomputer\gsc_main.cpp(233): warning C4101: 'ex': unreferenced local variable
-c:\users\jmvsu\onedrive\documents\school_fall_2018\cpen_333\assignment_1\gas_station_assignment1\gasstationcomputer\gsc_main.cpp(383): warning C4018: '>': signed/unsigned mismatch
+﻿  rt.cpp
+  tank.cpp
+  GSC_Main.cpp
+c:\users\jmvsu\onedrive\documents\school_fall_2018\cpen_333\assignment_1\gas_station_assignment1\gasstationcomputer\gsc_main.cpp(275): warning C4101: 'ex': unreferenced local variable
+c:\users\jmvsu\onedrive\documents\school_fall_2018\cpen_333\assignment_1\gas_station_assignment1\gasstationcomputer\gsc_main.cpp(425): warning C4018: '>': signed/unsigned mismatch
+  Generating Code...
   GasStationComputer.vcxproj -> C:\Users\jmvsu\OneDrive\Documents\School_Fall_2018\cpen_333\Assignment_1\Gas_Station_Assignment1\Debug\GasStationComputer.exe

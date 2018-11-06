@@ -23,7 +23,7 @@ Customer::Customer(int myNumber, char* pumpPipe)
 
 int Customer::main(void)
 {
-	CEvent donePump("Event_donePump");	//event to let GSC/customer know that pump has finished pumping gas
+	CEvent donePump("Event_donePump" + std::to_string(_info.pump));	//event to let GSC/customer know that pump has finished pumping gas
 	CMutex  m1("customerPipeline");
 	m1.Wait();	//wait at pump 
 
@@ -33,6 +33,7 @@ int Customer::main(void)
 	printf("(Testing only) hit enter to start \n");
 	getchar();
 	pipeline.Write(&_info);	//send struct with customer info..."swiping" credit card
+	//printf("Waiting for pump %s", std::to_string(_info.pump));
 	donePump.Wait(); 
 	printf("Customer %d is driving out of gas station...\n", _myNumber);
 	Sleep(2000);

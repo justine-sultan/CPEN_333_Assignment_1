@@ -68,7 +68,7 @@ int Pump::main(void)
 	printf("Pump linked to datapool: %s at address %p.....\n", _pumpDP, dpPump);
 
 	//customer to pump comm set-up
-	CEvent donePump("Event_donePump");	//event to let GSC/customer know that pump has finished pumping gas. note that the GSC also uses this
+	CEvent donePump("Event_donePump" + std::to_string(_myNumber));	//event to let GSC/customer know that pump has finished pumping gas. note that the GSC also uses this
 	printf("Pump %d creating pump/customer pipeline, name: %s....\n", _myNumber, _pumpPipe);
 	CTypedPipe<struct customerInfo>	pipeline(_pumpPipe, 1024);
 	struct customerInfo custInfo; 

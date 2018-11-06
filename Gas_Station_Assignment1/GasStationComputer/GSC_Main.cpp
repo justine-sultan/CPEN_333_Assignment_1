@@ -39,50 +39,89 @@ UINT __stdcall pumpThread(void *ThreadArgs)
 	if (GSC_DEBUG) { printf("Parent created datapool Pump 1 at address %p.....\n", dpPump); }
 
 	CEvent startPump("Event_startPump" + std::to_string(pumpID));	//event to authorise pump to start pumping gas for customer
-	CEvent donePump("Event_donePump");							//event to let GSC/customer know that pump has finished pumping gas
+	CEvent donePump("Event_donePump" + std::to_string(pumpID));		//event to let GSC/customer know that pump has finished pumping gas
+
+	//get y_cursor for the pump display:
+	int y_cursor;
+	switch (pumpID) {
+	case 1:
+		y_cursor = 10;
+		break;
+	case 2:
+		y_cursor = 18;
+		break;
+	case 3:
+		y_cursor = 26;
+		break;
+	case 4:
+		y_cursor = 34;
+		break;
+	}
 
 	gscR.Wait(); 
 
 	// Testing code for Lab3/4---------------------
 	//struct pumpDatapool *dpPumps[4]; 
 	while (1) {
-		//printf("Waiting for customer to arrive...\n");
 
-		ps.Wait();
-		//printf("Recieved customer input...\n");
-		
-		//printf("Name: %s \n", dpPump->name);
-		//printf("Credit Card #: %d \n", dpPump->creditCard);
-		//printf("Fuel Type: %d \n", dpPump->fuelType);
-		//printf("Fuel Amount: %d \n", dpPump->fuelAmount);
-		//printf("Time of Transaction: %s \n", dpPump->timeStamp);
-		//printf("Verifying and recieving credit card transaction...\n");
-		Sleep(2000);	//TODO: replace this sleep with prompt for user to authorize pump
-		
+		ps.Wait(); //wait for access to pump datapool
+
+		mDOS.Wait();
+		MOVE_CURSOR(0, y_cursor +2);
+		printf("Customer waiting. Press 'e' + %d to authorize \n", pumpID);
+		MOVE_CURSOR(15, y_cursor + 3);
+		printf("Name: %s \n", dpPump->name);
+		MOVE_CURSOR(15, y_cursor + 4);
+		printf("Credit Card #: %d \n", dpPump->creditCard);
+		MOVE_CURSOR(15, y_cursor + 5);
+		printf("Fuel Type and Amount: %d, %d \n", dpPump->fuelType, dpPump->fuelAmount);
+		MOVE_CURSOR(15, y_cursor + 6);
+		printf("Time of Transaction: %s \n", dpPump->timeStamp);
+		fflush(stdout);
+		mDOS.Signal();
+
+		cs.Signal();		//signal done with pump datapool
+
+		startPump.Wait();	//wait for authorization from user to continue
+
+		mDOS.Wait();
+		MOVE_CURSOR(0, y_cursor + 1);
+		printf("Pump enabled              \n");
+		MOVE_CURSOR(0, y_cursor + 2);
+		printf("Transaction authorized...                                       \n");
+		fflush(stdout);
+		mDOS.Signal();
+
 		//record transaction here
-		//TODO: this block of code causing GSC process to crash right now!! (if commented out it works)
-		struct transaction customerTr; 
+		struct transaction customerTr;
 		strcpy_s(customerTr.name, 20, dpPump->name);
-		customerTr.creditCard = dpPump->creditCard; 
+		customerTr.creditCard = dpPump->creditCard;
 		customerTr.fuelType = dpPump->fuelType;
 		customerTr.fuelAmount = dpPump->fuelAmount;
 		strcpy_s(customerTr.timeStamp, 100, dpPump->timeStamp);
-		customerTr.pump = pumpID; 
+		customerTr.pump = pumpID;
 		mTr.Wait();
 		tr_history.push_back(&customerTr);
-		mTr.Signal(); 
+		mTr.Signal();
 		//done recording
 
-		cs.Signal();
-
-		startPump.Signal();			//authorise pump to start pumping to customer
 		donePump.Wait();			//wait for pump to stop pumping gas
 
-		//mDOS.Wait();
-		//MOVE_CURSOR(0, 55);
-		//printf("finished transaction\n ");
-		//fflush(stdout);
-		//mDOS.Signal();
+		mDOS.Wait();
+		MOVE_CURSOR(0, y_cursor+1);
+		printf("Pump disabled                                                    \n");
+		MOVE_CURSOR(0, y_cursor + 2);
+		printf("No Customer at pump.                                             \n");
+		MOVE_CURSOR(15, y_cursor + 3);
+		printf("--                                                               \n");
+		MOVE_CURSOR(15, y_cursor + 4);
+		printf("--                                                               \n");
+		MOVE_CURSOR(15, y_cursor + 5);
+		printf("--                                                               \n");
+		MOVE_CURSOR(15, y_cursor + 6);
+		printf("--                                                               \n");
+		fflush(stdout);
+		mDOS.Signal();
 		
 	}
 
@@ -214,6 +253,9 @@ bool doCommand(std::string commandBuff) {
 			valid = true; 
 			if (commandBuff[0] == 'e') {
 				//do e stuff
+				index = std::stoi(commandBuff.substr(1, string::npos));
+				CEvent startPump("Event_startPump" + std::to_string(index));	//event to authorise pump to start pumping gas for customer
+				startPump.Signal(); 
 			}
 			if (commandBuff[0] == 'f') {
 				//do f stuff
@@ -285,6 +327,9 @@ int	main()
 	if (GSC_DEBUG) { printf("Creating GSC/Pump threads....\n"); }
 	int num =1;
 	CThread	pumpThread1(pumpThread, ACTIVE, &num);
+	//CThread	pumpThread2(pumpThread, ACTIVE, &num);
+	//CThread	pumpThread3(pumpThread, ACTIVE, &num);
+	//CThread	pumpThread4(pumpThread, ACTIVE, &num);
 	//gsc create thread to monitor fuel tanks
 	CThread	tankThread(tankThread, ACTIVE);
 
@@ -307,7 +352,7 @@ int	main()
 	printf("Tank 4: Super-99     |                | \n\n");
 
 	printf("PUMP 1 STATUS: \n");
-	printf("Pump enabled \n");
+	printf("Pump disabled \n");
 	printf("No Customer at pump \n");
 	printf("Customer Info: -- \n");
 	MOVE_CURSOR(15, 13);
@@ -318,7 +363,7 @@ int	main()
 	printf("-- \n\n");
 
 	printf("PUMP 2 STATUS: \n");
-	printf("Pump enabled \n");
+	printf("Pump disabled \n");
 	printf("No Customer at pump \n");
 	printf("Customer Info: -- \n");
 	MOVE_CURSOR(15, 21);
@@ -329,7 +374,7 @@ int	main()
 	printf("-- \n\n");
 
 	printf("PUMP 3 STATUS: \n");
-	printf("Pump enabled \n");
+	printf("Pump disabled \n");
 	printf("No Customer at pump \n");
 	printf("Customer Info: -- \n");
 	MOVE_CURSOR(15, 29);
@@ -340,7 +385,7 @@ int	main()
 	printf("-- \n\n");
 
 	printf("PUMP 4 STATUS: \n");
-	printf("Pump enabled \n");
+	printf("Pump disabled \n");
 	printf("No Customer at pump \n");
 	printf("Customer Info: -- \n");
 	MOVE_CURSOR(15, 37);
@@ -417,111 +462,3 @@ int	main()
 	return 0;
 }
 
-/*char KeyData[2] = { '\0', '\0'};	// 2 character keyboard command 
-	char Price[5]= { '\0', '\0' , '\0' , '\0', '\0'};   // 5 character string for the price command
-	int count = 0; 
-	while (1) {
-		if (TEST_FOR_KEYBOARD() != 0) {
-			count++; 
-			KeyData[0] = KeyData[1];			// move up previous character read
-			KeyData[1] = _getch();			// read next character from keyboard
-			if (count == 2) {
-				if (KeyData[0] == 'p') {
-					while (count<6){
-						Price[count - 2] = _getch();
-						count++; 
-					}
-					mDOS.Wait();
-					MOVE_CURSOR(0, 52);
-					printf("%c%c", KeyData[0], KeyData[1]);
-					MOVE_CURSOR(3, 52);
-					printf("%s \n", Price);
-					mDOS.Signal();
-					doCommand(KeyData, Price);
-					count = 0;
-				}
-				else {
-					mDOS.Wait();
-					MOVE_CURSOR(0, 52);
-					printf("%c%c       ", KeyData[0], KeyData[1]);
-					//do whatever else with command??
-					mDOS.Signal();
-					doCommand(KeyData);
-					count = 0;
-				}	
-			}
-		}
-	}*/
-
-
-/*//mutex to protect writing to the window
-	CMutex  mDOS("gsc_DOS_window");
-	int num = -1; 
-	bool valid = false; 
-	std::string strPrice(price_string);
-	float price = std::stof(strPrice);
-
-	if (command[0] == 't' && command[1] == 'h') {
-		valid = true; 
-		//send command to view transactions (probably just use another process/thread with own window to display
-	}
-	else {
-		switch (command[1]) {
-			case '1':
-				valid = true;
-				num = 1;
-				break;
-			case '2':
-				valid = true;
-				num = 2;
-				break;
-			case '3':
-				valid = true;
-				num = 3;
-				break;
-			case '4':
-				valid = true;
-				num = 4;
-				break;
-			default:
-				valid = false;
-				break;
-		}
-
-		if (valid == true) {
-			switch (command[0]) {
-				case 'p':
-					if (price >= 0 && price <= 0.00) {
-						//send set price command
-					}
-					else {
-						valid = false; 
-					}
-					break;
-				case 'e':
-					//send enable pump command
-					break;
-				case 'f':
-					//send fill pump command
-					break;
-				default:
-					valid = false;
-					break;
-			}
-		}
-	}
-
-	if (valid) {
-		mDOS.Wait();
-		MOVE_CURSOR(0, 53);
-		printf("Command %c%c completed........\n", command[0], command[1]);
-		mDOS.Signal();
-		return true; 
-	}
-	else {
-		mDOS.Wait();
-		MOVE_CURSOR(0, 53);
-		printf("Error: %c%c is invalid command", command[0], command[1]);
-		mDOS.Signal();
-		return false; 
-	}*/
