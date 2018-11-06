@@ -12,13 +12,13 @@ class Customer : public ActiveClass{
 
 private:
 	int _myNumber;
-	char* _pumpPipe; //memory leak? since only the pointer is ever getting passed, i dont think so?
+	//int _pumpNumber; //memory leak? since only the pointer is ever getting passed, i dont think so?
 	struct customerInfo _info; 
 	
 	int main(void);
 
 public:
-	Customer(int myNumber, char* pumpPipe);
+	Customer(int myNumber, int pumpNumber);
 
 };
 

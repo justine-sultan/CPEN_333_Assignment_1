@@ -14,9 +14,9 @@
 #include	<vector>
 
 //add global rendesvous here and to all processes
-CRendezvous     r1("MyRendezvous", 3);	//TODO update to 6 to start GSC,4 pumps, and customer 
+CRendezvous     r1("MyRendezvous", 6);	//TODO update to 6 to start GSC,4 pumps, and customer 
 CRendezvous		r2("EndRendezvous", 3); //to synchronize termination of 3 processes
-CRendezvous     gscR("gscRendezvous", 3);	//internal rendesvous for GSC's 5 threads - need to eventually be 6 (5 threads plus parent process)
+CRendezvous     gscR("gscRendezvous", 6);	//internal rendesvous for GSC's 5 threads - need to eventually be 6 (5 threads plus parent process)
 
 bool GSC_DEBUG = false; 
 vector<transaction*> tr_history;	//vector for storing customer transactions
@@ -48,13 +48,13 @@ UINT __stdcall pumpThread(void *ThreadArgs)
 		y_cursor = 10;
 		break;
 	case 2:
-		y_cursor = 18;
+		y_cursor = 17;
 		break;
 	case 3:
-		y_cursor = 26;
+		y_cursor = 25;
 		break;
 	case 4:
-		y_cursor = 34;
+		y_cursor = 33;
 		break;
 	}
 
@@ -325,11 +325,14 @@ int	main()
 	//GSC will create all pump and fuel tank data pools to simplify things
 	//creating GSC/PUMP datapools and create the corresponding thread object in suspended state
 	if (GSC_DEBUG) { printf("Creating GSC/Pump threads....\n"); }
-	int num =1;
-	CThread	pumpThread1(pumpThread, ACTIVE, &num);
-	//CThread	pumpThread2(pumpThread, ACTIVE, &num);
-	//CThread	pumpThread3(pumpThread, ACTIVE, &num);
-	//CThread	pumpThread4(pumpThread, ACTIVE, &num);
+	int num1 =1;
+	int num2 = 2;
+	int num3 = 3;
+	int num4 = 4;
+	CThread	pumpThread1(pumpThread, ACTIVE, &num1);
+	CThread	pumpThread2(pumpThread, ACTIVE, &num2);
+	CThread	pumpThread3(pumpThread, ACTIVE, &num3);
+	CThread	pumpThread4(pumpThread, ACTIVE, &num4);
 	//gsc create thread to monitor fuel tanks
 	CThread	tankThread(tankThread, ACTIVE);
 
@@ -421,6 +424,7 @@ int	main()
 	int count = 0; 
 	int maxSize = 30; 
 
+	//TODO: fix ppossible blocking/hang-ups here??
 	while (1) {
 		if (TEST_FOR_KEYBOARD() != 0) {
 			getChar[0] = _getch(); 

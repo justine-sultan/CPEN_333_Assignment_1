@@ -56,7 +56,7 @@ void Pump::getTimeStamp(char* timeString) {
 
 int Pump::main(void)
 {
-	CRendezvous  r1("MyRendezvous", 3);	//GSC, 4 pumps, and customer
+	CRendezvous  r1("MyRendezvous", 6);	//GSC, 4 pumps, and customer
 
 	//pump to GSC comm set-up (pump producer, GSC consumer)
 	//note that the GSC also uses the donePump event under the customer to pump comm set-up section
@@ -104,6 +104,7 @@ int Pump::main(void)
 		pumpFuel(custInfo.fuelType, custInfo.fuelAmount);
 		//TODO: for now, i don't think that the pumpFuel needs to be concurrent with this thread? may need to change if problems arise
 		donePump.Signal();	//signal that pump done pumping gas
+		printf("Pump %d is done pumping \n", _myNumber); 
 	}
 	//end test area-----------
 
