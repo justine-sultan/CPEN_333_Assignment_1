@@ -29,6 +29,43 @@ int refillTank;						//flag and global for indicating to refill a tank
 int priceTank;						//flag and global for indicating tank price change
 float price; 
 
+int timeStamp(char* timeString) {
+	//getTimeStamp assumes that gas station starts at 00:00:00 hours/min/secs (military time)
+	//getTimeStamp adds elapsed seconds on to above start time. at 23:59:59 the time rolls back to 00:00
+	//clock_t timeSinceStart = clock();
+	long int timeSinceStart = std::chrono::duration_cast< std::chrono::seconds >(std::chrono::system_clock::now().time_since_epoch()).count();
+	long int hours = timeSinceStart / 3600;
+	long int minutes = (timeSinceStart - (hours * 3600)) / 60;
+	long int seconds = timeSinceStart - (hours * 3600) - (minutes * 60);
+	hours = (hours % 24) - 8;
+
+	//clock() is not thread safe!!
+	//TODO: need alternative
+	string timeStamp("11-08-18 ");
+
+	char hours_buffer[15];
+	snprintf(hours_buffer, 10, "%02d", (int)hours);
+	timeStamp.append(hours_buffer);
+	timeStamp.append(":");
+	char minutes_buffer[15];
+	snprintf(minutes_buffer, 10, "%02d", (int)minutes);
+	timeStamp.append(minutes_buffer);
+	timeStamp.append(":");
+	char seconds_buffer[15];
+	snprintf(seconds_buffer, 10, "%02d", (int)seconds);
+	timeStamp.append(seconds_buffer);
+	/*timeStamp.append(hours);
+	timeStamp.append(":");
+	timeStamp.append(std::to_string(minutes));
+	timeStamp.append(":");
+	timeStamp.append(std::to_string(seconds));*/
+	strcpy_s(timeString, 100, timeStamp.c_str());
+	//strcpy_s(timeString, 100, "01-01-18 06:00:00"); 
+
+	int retVal = timeSinceStart - 1541500000; 
+	return retVal;
+}
+
 //thread class for reading pump datapools. TODO: move datapool creation into here as well?
 UINT __stdcall pumpThread(void *ThreadArgs)
 {	
@@ -144,41 +181,48 @@ UINT __stdcall tankThread(void *ThreadArgs)
 	if (GSC_DEBUG) { printf("Creating fuel tanks....\n"); }
 	Tank fuelTanks;			//all instantiations of the Tank monitor link to same datapool 
 	bool flashToggle = false; 
+	char mytimeStamp[100];
 	//bool prevLow = false;
 	//bool currLow = false; 
 	
 	gscR.Wait();
 	//duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
-	using namespace std::chrono;
-	long int ms2 = duration_cast< seconds >(system_clock::now().time_since_epoch()).count();
-	long int ms1 = duration_cast< seconds >(system_clock::now().time_since_epoch()).count();
-	long int time_span;
-	//double ms2 = (system_clock::now().time_since_epoch().count());
+	//using namespace std::chrono;
+	//long int ms2 = duration_cast< seconds >(system_clock::now().time_since_epoch()).count();
+	//long int ms1 = duration_cast< seconds >(system_clock::now().time_since_epoch()).count();
+	//long int time_span;
+	int prevTime = timeStamp(mytimeStamp);
+
 	while (1) {
 		mDOS.Wait();
+
+		MOVE_CURSOR(38, 0);
+		timeStamp(mytimeStamp);
+		printf("%s", mytimeStamp);
+
 		MOVE_CURSOR(0, 5); 
-		printf("Tank 1: Regular-87   |  %.2f          |\n", fuelTanks.getPrice(0), fuelTanks.readAmount(0));
+		printf("Tank 1: Regular-87   |  %.2f          |\n", fuelTanks.getPrice(0));
 		MOVE_CURSOR(0, 6);
-		printf("Tank 2: MidGrade-89  |  %.2f          |\n", fuelTanks.getPrice(1), fuelTanks.readAmount(1));
+		printf("Tank 2: MidGrade-89  |  %.2f          |\n", fuelTanks.getPrice(1));
 		MOVE_CURSOR(0, 7);
-		printf("Tank 3: Premium-91   |  %.2f          |\n", fuelTanks.getPrice(2), fuelTanks.readAmount(2));
+		printf("Tank 3: Premium-91   |  %.2f          |\n", fuelTanks.getPrice(2));
 		MOVE_CURSOR(0, 8);
-		//printf("Tank 4: Super-99     |  %.2f          |  %.2f                   \n", fuelTanks.getPrice(3), fuelTanks.readAmount(3));
-		printf("Tank 4: Super-99     |  %.2f          |\n", fuelTanks.getPrice(3), fuelTanks.readAmount(3));
+		printf("Tank 4: Super-99     |  %.2f          |\n", fuelTanks.getPrice(3));
 		fflush(stdout);
 		mDOS.Signal();
 
 		int i = 0; 
 		while(i < 4){
 			if (fuelTanks.readAmount(i) <= 200) {
-				//prevLow = currLow; 
-				//currLow = true; 
 
-				ms2 = duration_cast<  seconds >(system_clock::now().time_since_epoch()).count();
-				time_span = ms2 - ms1; 
-				if (time_span >= 1) {
-					ms1 = duration_cast< seconds >(system_clock::now().time_since_epoch()).count();
+
+				//ms2 = duration_cast<  seconds >(system_clock::now().time_since_epoch()).count();
+				//time_span = ms2 - ms1; 
+				//if (time_span >= 1) {
+					//ms1 = duration_cast< seconds >(system_clock::now().time_since_epoch()).count();
+				if( (timeStamp(mytimeStamp) - prevTime) >=1){
+					prevTime = timeStamp(mytimeStamp);
 					flashToggle = !flashToggle; 
 				}
 				if (flashToggle) {
@@ -211,7 +255,8 @@ UINT __stdcall tankThread(void *ThreadArgs)
 					fflush(stdout);
 					mDOS.Signal();
 				}
-				ms1 = duration_cast< seconds >(system_clock::now().time_since_epoch()).count();
+				//ms1 = duration_cast< seconds >(system_clock::now().time_since_epoch()).count();
+				//prevTime = timeStamp(mytimeStamp);//DO NOT INCLUDE TIME CHECK HERE OR TIME WILL B MESSED UP
 			}
 			
 			i++; 

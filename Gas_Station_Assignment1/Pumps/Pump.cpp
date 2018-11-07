@@ -89,16 +89,35 @@ bool Pump::pumpFuel(int tank, int amount)
 void Pump::getTimeStamp(char* timeString) {
 	//getTimeStamp assumes that gas station starts at 00:00:00 hours/min/secs (military time)
 	//getTimeStamp adds elapsed seconds on to above start time. at 23:59:59 the time rolls back to 00:00
-	/*clock_t timeSinceStart = clock();
-	int hours = timeSinceStart / 3600;
-	int minutes = (timeSinceStart - (hours * 3600)) / 60;
-	int seconds = timeSinceStart - (hours * 3600) - (minutes * 60); 
-	hours = hours % 24;*/
+	//clock_t timeSinceStart = clock();
+	long int timeSinceStart = std::chrono::duration_cast< std::chrono::seconds >(std::chrono::system_clock::now().time_since_epoch()).count();
+	long int hours = timeSinceStart / 3600;
+	long int minutes = (timeSinceStart - (hours * 3600)) / 60;
+	long int seconds = timeSinceStart - (hours * 3600) - (minutes * 60);
+	hours = (hours % 24) - 8;
 
 	//clock() is not thread safe!!
 	//TODO: need alternative
+	string timeStamp("11-08-18 "); 
 
-	strcpy_s(timeString, 100, "01-01-18 06:00:00"); 
+	char hours_buffer[15];
+	snprintf(hours_buffer, 10, "%02d", (int)hours);
+	timeStamp.append(hours_buffer);
+	timeStamp.append(":");
+	char minutes_buffer[15];
+	snprintf(minutes_buffer, 10, "%02d", (int)minutes);
+	timeStamp.append(minutes_buffer);
+	timeStamp.append(":");
+	char seconds_buffer[15];
+	snprintf(seconds_buffer, 10, "%02d", (int)seconds);
+	timeStamp.append(seconds_buffer);
+	/*timeStamp.append(hours);
+	timeStamp.append(":");
+	timeStamp.append(std::to_string(minutes));
+	timeStamp.append(":");
+	timeStamp.append(std::to_string(seconds));*/
+	strcpy_s(timeString, 100, timeStamp.c_str());
+	//strcpy_s(timeString, 100, "01-01-18 06:00:00"); 
 	return; 
 }
 
