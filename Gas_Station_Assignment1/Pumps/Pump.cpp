@@ -11,8 +11,8 @@ bool PUMP_DEBUG = false;
 Pump::Pump(int myNumber, char* pumpDP, char* pumpPipe)
 {
 	_myNumber = myNumber;
-	_pumpDP = pumpDP; 
-	_pumpPipe = pumpPipe; 
+	_pumpDP = pumpDP;
+	_pumpPipe = pumpPipe;
 
 	_tank = new Tank();
 
@@ -52,27 +52,33 @@ int Pump::updateDOS(void *ThreadArgs)	//thread for reading/writing to other proc
 		fflush(stdout);
 		mDOS.Signal();
 	}
-	return true; 
+	return true;
 }
 
 bool Pump::pumpFuel(int tank, int amount)
 {
 	CMutex  mDOS("pump_DOS_window");
-	bool result = false; 
-	float price = _tank->getPrice(tank); 
+	bool result = false;
+	float price = _tank->getPrice(tank);
+	CCondition lowTank("lowTank");
 
 	for (int i = 0; i < amount * 2; i++) {
 		Sleep(1000);
 		result = _tank->decrement(tank); 
-		if (result == false) {
-			return result; 
-		}
 
 		mDOS.Wait(); 
 		MOVE_CURSOR(15, _y_cursor + 6);
 		printf("Your total bill: %.2f \n", price*(i+1)*0.5);
 		fflush(stdout);
 		mDOS.Signal();
+
+		if (result == false) {
+			return result;
+		}
+
+		if (_tank->readAmount(tank) <= 200) {
+			lowTank.Reset(); 
+		}
 
 	}
 
@@ -154,7 +160,7 @@ int Pump::main(void)
 		cs.Wait();
 		strcpy_s(dpPump->name, 20, custInfo.name); //names must be 19 characters or less (this accounts for null character)
 		dpPump->creditCard = custInfo.creditCard;
-		dpPump->fuelType = custInfo.fuelType;	//type 0-4
+		dpPump->fuelType = custInfo.fuelType;	//type 1-4, need to convert to 0 index
 		dpPump->fuelAmount = custInfo.fuelAmount;
 		getTimeStamp(dpPump->timeStamp);
 		ps.Signal();

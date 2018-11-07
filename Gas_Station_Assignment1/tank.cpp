@@ -13,7 +13,9 @@ Tank::Tank(void) {
 	_data = (struct tankData*)(_dp->LinkDataPool());
 
 	for (int i = 0; i < 4; i++) {
-		_data->tankArray[i] = 500; 
+		//_data->tankArray[i] = 500; 
+		//FOR DEBUGGING/DEMO:
+		_data->tankArray[i] = 205;
 		_data->_price[i] = 1.00;
 	}
 

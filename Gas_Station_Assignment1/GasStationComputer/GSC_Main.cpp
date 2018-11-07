@@ -12,6 +12,9 @@
 #include    "..\GSDataStructures.h"
 #include	"..\tank.h"
 #include	<vector>
+#include	<ctime>
+#include	<chrono>
+#include    <windows.h>
 
 //add global rendesvous here and to all processes
 CRendezvous     r1("MyRendezvous", 6);	//TODO update to 6 to start GSC,4 pumps, and customer 
@@ -22,6 +25,9 @@ bool GSC_DEBUG = false;
 vector<transaction*> tr_history;	//vector for storing customer transactions
 bool thDisplayed = false;			//flag indicating if th is displayed
 int long thSize = 0;					//global for storing number of displayed transactions
+int refillTank;						//flag and global for indicating to refill a tank
+int priceTank;						//flag and global for indicating tank price change
+float price; 
 
 //thread class for reading pump datapools. TODO: move datapool creation into here as well?
 UINT __stdcall pumpThread(void *ThreadArgs)
@@ -86,7 +92,9 @@ UINT __stdcall pumpThread(void *ThreadArgs)
 
 		mDOS.Wait();
 		MOVE_CURSOR(0, y_cursor + 1);
+		TEXT_COLOUR(10, 0);
 		printf("Pump enabled              \n");
+		TEXT_COLOUR(7, 0);
 		MOVE_CURSOR(0, y_cursor + 2);
 		printf("Transaction authorized...                                       \n");
 		fflush(stdout);
@@ -109,7 +117,9 @@ UINT __stdcall pumpThread(void *ThreadArgs)
 
 		mDOS.Wait();
 		MOVE_CURSOR(0, y_cursor+1);
+		TEXT_COLOUR(14, 0);
 		printf("Pump disabled                                                    \n");
+		TEXT_COLOUR(7, 0);
 		MOVE_CURSOR(0, y_cursor + 2);
 		printf("No Customer at pump.                                             \n");
 		MOVE_CURSOR(15, y_cursor + 3);
@@ -132,24 +142,81 @@ UINT __stdcall tankThread(void *ThreadArgs)
 {
 	CMutex  mDOS("gsc_DOS_window");			//mutex to protect writing to the window
 	if (GSC_DEBUG) { printf("Creating fuel tanks....\n"); }
-	Tank fuelTanks;			//all instantiations of the Tank monitor link to same datapool
-
-	//GSC to pump comm
+	Tank fuelTanks;			//all instantiations of the Tank monitor link to same datapool 
+	bool flashToggle = false; 
+	//bool prevLow = false;
+	//bool currLow = false; 
+	
 	gscR.Wait();
+	//duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
-	// Testing code for Lab3/4---------------------
-	if (GSC_DEBUG) { printf("Viewing levels of fuel in tank 1...\n"); }
+	using namespace std::chrono;
+	long int ms2 = duration_cast< seconds >(system_clock::now().time_since_epoch()).count();
+	long int ms1 = duration_cast< seconds >(system_clock::now().time_since_epoch()).count();
+	long int time_span;
+	//double ms2 = (system_clock::now().time_since_epoch().count());
 	while (1) {
 		mDOS.Wait();
 		MOVE_CURSOR(0, 5); 
-		printf("Tank 1: Regular-87   |  %.2f            | %.2f \n", fuelTanks.getPrice(0), fuelTanks.readAmount(0));
-		printf("Tank 2: MidGrade-89  |  %.2f            | %.2f \n", fuelTanks.getPrice(1), fuelTanks.readAmount(1));
-		printf("Tank 3: Premium-91   |  %.2f            | %.2f \n", fuelTanks.getPrice(2), fuelTanks.readAmount(2));
-		printf("Tank 4: Super-99     |  %.2f            | %.2f \n", fuelTanks.getPrice(3), fuelTanks.readAmount(3));
+		printf("Tank 1: Regular-87   |  %.2f          |\n", fuelTanks.getPrice(0), fuelTanks.readAmount(0));
+		MOVE_CURSOR(0, 6);
+		printf("Tank 2: MidGrade-89  |  %.2f          |\n", fuelTanks.getPrice(1), fuelTanks.readAmount(1));
+		MOVE_CURSOR(0, 7);
+		printf("Tank 3: Premium-91   |  %.2f          |\n", fuelTanks.getPrice(2), fuelTanks.readAmount(2));
+		MOVE_CURSOR(0, 8);
+		//printf("Tank 4: Super-99     |  %.2f          |  %.2f                   \n", fuelTanks.getPrice(3), fuelTanks.readAmount(3));
+		printf("Tank 4: Super-99     |  %.2f          |\n", fuelTanks.getPrice(3), fuelTanks.readAmount(3));
 		fflush(stdout);
 		mDOS.Signal();
 
-		//Sleep(300);		//refreshes every 300 sec - prevent hogging of DOS resource by thread
+		int i = 0; 
+		while(i < 4){
+			if (fuelTanks.readAmount(i) <= 200) {
+				//prevLow = currLow; 
+				//currLow = true; 
+
+				ms2 = duration_cast<  seconds >(system_clock::now().time_since_epoch()).count();
+				time_span = ms2 - ms1; 
+				if (time_span >= 1) {
+					ms1 = duration_cast< seconds >(system_clock::now().time_since_epoch()).count();
+					flashToggle = !flashToggle; 
+				}
+				if (flashToggle) {
+					mDOS.Wait();
+					MOVE_CURSOR(38, (5 + i));
+				  //printf("|  %.2f                   \n", fuelTanks.getPrice(0), fuelTanks.readAmount(0));
+					printf("| %.2f  RE-FUEL          \n ", fuelTanks.readAmount(i));
+					fflush(stdout);
+					mDOS.Signal();
+				}
+				else {
+					mDOS.Wait();
+					MOVE_CURSOR(38, (5 + i));
+					TEXT_COLOUR(12, 0);
+				  //printf("| %.2f                    \n", fuelTanks.getPrice(0), fuelTanks.readAmount(0));
+					printf("| %.2f  RE-FUEL             ", fuelTanks.readAmount(i));
+					fflush(stdout);
+					TEXT_COLOUR(7, 0);
+					mDOS.Signal();
+				}
+			}
+			else {
+				//prevLow = currLow;
+				//currLow = false;
+				if (1) {
+					mDOS.Wait();
+					MOVE_CURSOR(38, (5 + i));
+					//printf("| %.2f                    \n", fuelTanks.getPrice(0), fuelTanks.readAmount(0));
+					printf("| %.2f                      \n", fuelTanks.readAmount(i));
+					fflush(stdout);
+					mDOS.Signal();
+				}
+				ms1 = duration_cast< seconds >(system_clock::now().time_since_epoch()).count();
+			}
+			
+			i++; 
+		}
+
 	}
 
 	return 0;									// thread ends here
@@ -239,7 +306,7 @@ void hideTH(long int size) {
 	return;
 }
 
-bool doCommand(std::string commandBuff) {
+bool doCommand(std::string commandBuff, Tank* tanks) {
 	bool valid = false; 
 	int index = -1; 
 	float price = -1; 
@@ -265,11 +332,10 @@ bool doCommand(std::string commandBuff) {
 				startPump.Signal(); 
 			}
 			if (commandBuff[0] == 'f') {
-				//TODO: replace with something that uses tank thread??
-				//this is causing bug right now - shifting text down
 				index = std::stoi(commandBuff.substr(1, string::npos));
-				Tank fuelTanks;
-				fuelTanks.setAmount(500, index-1); 
+				tanks->setAmount(500, (index - 1));
+				CCondition lowTank("lowTank");
+				lowTank.Signal();
 			}
 		}
 	}
@@ -280,8 +346,10 @@ bool doCommand(std::string commandBuff) {
 		//commandBuff.erase(0,2);		//delete first two characters, leaving just the price
 		try {
 			price = std::stof(commandBuff.substr(2, string::npos));
+			//past exception point
 			valid = true; 
-			//deal with p command
+			index = std::stoi(commandBuff.substr(1, 1));
+			tanks->setPrice(price, (index-1)); 
 		}
 		catch (std::exception& ex) {
 			mDOS.Wait();
@@ -335,7 +403,10 @@ int	main()
 
 	//GSC will create all pump and fuel tank data pools to simplify things
 	//creating GSC/PUMP datapools and create the corresponding thread object in suspended state
-	if (GSC_DEBUG) { printf("Creating GSC/Pump threads....\n"); }
+	if (GSC_DEBUG) { printf("Creating fuelTanks and GSC/Pump threads....\n"); }
+	Tank *tanks = new Tank();
+	CCondition lowTank("lowTank");
+	lowTank.Signal();
 	int num1 =1;
 	int num2 = 2;
 	int num3 = 3;
@@ -366,7 +437,9 @@ int	main()
 	printf("Tank 4: Super-99     |                | \n\n");
 
 	printf("PUMP 1 STATUS: \n");
+	TEXT_COLOUR(14, 0);
 	printf("Pump disabled \n");
+	TEXT_COLOUR(7, 0);
 	printf("No Customer at pump \n");
 	printf("Customer Info: -- \n");
 	MOVE_CURSOR(15, 13);
@@ -377,7 +450,9 @@ int	main()
 	printf("-- \n\n");
 
 	printf("PUMP 2 STATUS: \n");
+	TEXT_COLOUR(14, 0);
 	printf("Pump disabled \n");
+	TEXT_COLOUR(7, 0);
 	printf("No Customer at pump \n");
 	printf("Customer Info: -- \n");
 	MOVE_CURSOR(15, 21);
@@ -388,7 +463,9 @@ int	main()
 	printf("-- \n\n");
 
 	printf("PUMP 3 STATUS: \n");
+	TEXT_COLOUR(14, 0);
 	printf("Pump disabled \n");
+	TEXT_COLOUR(7, 0);
 	printf("No Customer at pump \n");
 	printf("Customer Info: -- \n");
 	MOVE_CURSOR(15, 29);
@@ -399,7 +476,9 @@ int	main()
 	printf("-- \n\n");
 
 	printf("PUMP 4 STATUS: \n");
+	TEXT_COLOUR(14, 0);
 	printf("Pump disabled \n");
+	TEXT_COLOUR(7, 0);
 	printf("No Customer at pump \n");
 	printf("Customer Info: -- \n");
 	MOVE_CURSOR(15, 37);
@@ -458,7 +537,7 @@ int	main()
 					fflush(stdout);
 					mDOS.Signal();
 					//parse here
-					doCommand(commandBuff); 
+					doCommand(commandBuff, tanks); 
 					commandBuff.clear();
 				}
 			}

@@ -29,8 +29,8 @@ int	main()
 	int i = 0; 
 	int pumpNum = 0; 
 	while(1){
-		Sleep(10000); 
-		Sleep((rand()%10000 + 8000));		//pause for 500 to 5500 msec
+		Sleep(1000); 
+		Sleep((rand()%10000 + 8000));		//pause 
 		pumpNum = rand() % 4 + 1;			//random number from 1 to 4
 		customerP = new Customer(i, pumpNum); 
 		customerP->Resume();
