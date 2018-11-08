@@ -68,7 +68,7 @@ bool Pump::pumpFuel(int tank, int amount)
 
 		mDOS.Wait(); 
 		MOVE_CURSOR(15, _y_cursor + 6);
-		printf("Your total bill: %.2f \n", price*(i+1)*0.5);
+		printf("Your total bill: $%.2f \n", price*(i+1)*0.5);
 		fflush(stdout);
 		mDOS.Signal();
 
@@ -137,6 +137,7 @@ int Pump::main(void)
 
 	//customer to pump comm set-up
 	CEvent donePump("Event_donePump" + std::to_string(_myNumber));	//event to let GSC/customer know that pump has finished pumping gas. note that the GSC also uses this
+	CEvent moveHose("Event_moveHose" + std::to_string(_myNumber));	//event to let pump know hose is removed/returned
 	if (PUMP_DEBUG) { printf("Pump %d creating pump/customer pipeline, name: %s....\n", _myNumber, _pumpPipe); }
 	CTypedPipe<struct customerInfo>	pipeline(_pumpPipe, 1024);
 	struct customerInfo custInfo; 
@@ -150,6 +151,16 @@ int Pump::main(void)
 		dosThread.Resume();
 	}
 
+	CCondition lowTank("lowTank");		//check if tanks low before starting
+	for (int i = 0; i++; i < 4) {
+		if (_tank->readAmount(i) <= 200) {
+			lowTank.Reset();
+		}
+		else {
+			lowTank.Signal();
+		}
+	}
+	
 	r1.Wait();	//wait for other processes before starting 
 
 	//Testing area for lab 3/4--------
@@ -163,15 +174,25 @@ int Pump::main(void)
 		//display customer info to Pump Display, then send it
 		mDOS.Wait();
 		MOVE_CURSOR(0, _y_cursor + 2);
-		printf("Customer at pump. Waiting for authorization. \n");
+		printf("Customer at pump. Selecting Fuel Grade and removing pump... \n");
 		MOVE_CURSOR(15, _y_cursor + 3);
 		printf("Name: %s \n", custInfo.name);
 		MOVE_CURSOR(15, _y_cursor + 4);
 		printf("Credit Card #: %d \n", custInfo.creditCard);
 		MOVE_CURSOR(15, _y_cursor + 5);
-		printf("Fuel Type and Amount: %d, %d \n", custInfo.fuelType, custInfo.fuelAmount);
-		MOVE_CURSOR(15, _y_cursor + 6);
+		//printf("Fuel Type and Amount: %d, %d \n", custInfo.fuelType, custInfo.fuelAmount);
+		//MOVE_CURSOR(15, _y_cursor + 6);
 		printf("Your total bill: 0.00 \n");
+		fflush(stdout);
+		mDOS.Signal();
+
+		moveHose.Wait();		//wait for customer to remove house/select fuel
+
+		mDOS.Wait();
+		MOVE_CURSOR(0, _y_cursor + 2);
+		printf("Customer waiting for authorization...                      \n");
+		MOVE_CURSOR(15, _y_cursor + 5);
+		printf("Fuel Type and Amount: %d, %d \n", custInfo.fuelType, custInfo.fuelAmount);
 		fflush(stdout);
 		mDOS.Signal();
 
@@ -187,8 +208,10 @@ int Pump::main(void)
 		startPump.Wait();	//wait for GSC authorization to pump gas
 		
 		mDOS.Wait();
-		MOVE_CURSOR(0, _y_cursor + 1);
+		MOVE_CURSOR(0, _y_cursor + 1); 
+		TEXT_COLOUR(10, 0);
 		printf("Pump enabled                                       \n");
+		TEXT_COLOUR(7, 0);
 		MOVE_CURSOR(0, _y_cursor + 2);
 		printf("Transaction Authorizatized. Pumping fuel....       \n");
 		fflush(stdout);
@@ -198,10 +221,12 @@ int Pump::main(void)
 		//TODO: for now, i don't think that the pumpFuel needs to be concurrent with this thread? may need to change if problems arise
 		
 		mDOS.Wait();
-		MOVE_CURSOR(0, _y_cursor + 1);
+		MOVE_CURSOR(0, _y_cursor + 1); 
+		TEXT_COLOUR(14, 0);
 		printf("Pump disabled                                      \n");
+		TEXT_COLOUR(7, 0);
 		MOVE_CURSOR(0, _y_cursor + 2);
-		printf("No Customer at pump                                \n");
+		printf("Customer returning hose and driving away...        \n");
 		MOVE_CURSOR(15, _y_cursor + 3);
 		printf("--                                                 \n");
 		MOVE_CURSOR(15, _y_cursor + 4);
@@ -215,6 +240,14 @@ int Pump::main(void)
 
 		donePump.Signal();	//signal that pump done pumping gas
 		if (PUMP_DEBUG) { printf("Pump %d is done pumping \n", _myNumber); }
+
+		moveHose.Wait();
+		donePump.Signal();
+		mDOS.Wait();
+		MOVE_CURSOR(0, _y_cursor + 2);
+		printf("No customer at pump.						       \n");		
+		fflush(stdout);
+		mDOS.Signal();
 		
 	
 

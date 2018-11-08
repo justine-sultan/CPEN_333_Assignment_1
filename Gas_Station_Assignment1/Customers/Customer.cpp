@@ -22,7 +22,7 @@ Customer::Customer(int myNumber, int pumpNumber)
 
 	_info.pump = pumpNumber;	
 	//_info.pump = 1; 
-	printf("Creating customer \n"); 
+	if (_cust_DEBUG) { printf("Creating customer \n"); }
 }
 
 
@@ -34,23 +34,28 @@ int Customer::main(void)
 	lowTank.Wait();		//check if pumps closed for fuel refill
 
 	CEvent donePump("Event_donePump" + std::to_string(_info.pump));	//event to let GSC/customer know that pump has finished pumping gas
+	CEvent moveHose("Event_moveHose" + std::to_string(_info.pump));	//event to let pump know hose is removed/returned
 
 	std::string pumpPipe("Pump");
 	pumpPipe.append(std::to_string(_info.pump));
 	pumpPipe.append("Pipeline");
 
-	printf("\nCustomer %d linking pump/customer pipeline for pump %s....\n", _myNumber, pumpPipe.c_str() );
+	if (_cust_DEBUG) { printf("\nCustomer %d linking pump/customer pipeline for pump %s....\n", _myNumber, pumpPipe.c_str()); }
 	CTypedPipe<struct customerInfo> pipeline(pumpPipe.c_str(), 1024);
 
 	pipeline.Write(&_info);	//send struct with customer info..."swiping" credit card
-	//printf("Waiting for pump %s", std::to_string(_info.pump));
-	printf("Customer %d is waiting for pump %d...\n", _myNumber, _info.pump);
-	donePump.Wait(); 
-	printf("Customer %d is driving out of gas station...\n", _myNumber);
-	Sleep(2000);
+	Sleep(3000);
+	moveHose.Signal(); 
 
+	donePump.Wait(); 
+
+	if (_cust_DEBUG) { printf("Customer %d returning hose and is driving out of gas station...\n", _myNumber); }
+	Sleep(2000);
+	moveHose.Signal();
+
+	Sleep(1000);
 	m1.Signal(); 
-	printf("Customer %d has left gas station \n", _myNumber); 
+	if (_cust_DEBUG) { printf("Customer %d has left gas station \n", _myNumber); } 
 	
 	return(0); 
 }

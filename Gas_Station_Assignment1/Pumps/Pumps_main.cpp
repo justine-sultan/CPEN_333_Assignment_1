@@ -37,7 +37,9 @@ int   main()
 	printf("Tank 4: Super-99     |                \n\n");
 
 	printf("PUMP 1 STATUS: \n");
+	TEXT_COLOUR(14, 0);
 	printf("Pump disabled \n");
+	TEXT_COLOUR(7, 0);
 	printf("No Customer at pump \n");
 	printf("Customer Info: -- \n"); //12
 	MOVE_CURSOR(15, 13);
@@ -50,7 +52,9 @@ int   main()
 	printf("-- \n\n");
 
 	printf("PUMP 2 STATUS: \n");
+	TEXT_COLOUR(14, 0);
 	printf("Pump disabled \n");
+	TEXT_COLOUR(7, 0);
 	printf("No Customer at pump \n");
 	printf("Customer Info: -- \n");
 	MOVE_CURSOR(15, 22);
@@ -63,7 +67,9 @@ int   main()
 	printf("-- \n\n");
 
 	printf("PUMP 3 STATUS: \n");
+	TEXT_COLOUR(14, 0);
 	printf("Pump disabled \n");
+	TEXT_COLOUR(7, 0);
 	printf("No Customer at pump \n");
 	printf("Customer Info: -- \n");
 	MOVE_CURSOR(15, 31);
@@ -76,7 +82,9 @@ int   main()
 	printf("-- \n\n");
 
 	printf("PUMP 4 STATUS: \n");
+	TEXT_COLOUR(14, 0);
 	printf("Pump disabled \n");
+	TEXT_COLOUR(7, 0);
 	printf("No Customer at pump \n");
 	printf("Customer Info: -- \n");
 	MOVE_CURSOR(15, 40);

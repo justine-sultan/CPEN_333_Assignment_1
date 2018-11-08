@@ -158,7 +158,7 @@ UINT __stdcall pumpThread(void *ThreadArgs)
 		printf("Pump disabled                                                    \n");
 		TEXT_COLOUR(7, 0);
 		MOVE_CURSOR(0, y_cursor + 2);
-		printf("No Customer at pump.                                             \n");
+		printf("Customer returning hose and driving away...                      \n");
 		MOVE_CURSOR(15, y_cursor + 3);
 		printf("--                                                               \n");
 		MOVE_CURSOR(15, y_cursor + 4);
@@ -167,6 +167,14 @@ UINT __stdcall pumpThread(void *ThreadArgs)
 		printf("--                                                               \n");
 		MOVE_CURSOR(15, y_cursor + 6);
 		printf("--                                                               \n");
+		fflush(stdout);
+		mDOS.Signal();
+
+		donePump.Wait();
+		
+		mDOS.Wait();
+		MOVE_CURSOR(0, y_cursor + 2);
+		printf("No customer at pump.						                     \n");
 		fflush(stdout);
 		mDOS.Signal();
 		
@@ -178,6 +186,7 @@ UINT __stdcall pumpThread(void *ThreadArgs)
 UINT __stdcall tankThread(void *ThreadArgs)
 {
 	CMutex  mDOS("gsc_DOS_window");			//mutex to protect writing to the window
+	CCondition lowTank("lowTank");
 	if (GSC_DEBUG) { printf("Creating fuel tanks....\n"); }
 	Tank fuelTanks;			//all instantiations of the Tank monitor link to same datapool 
 	bool flashToggle = false; 
@@ -197,7 +206,7 @@ UINT __stdcall tankThread(void *ThreadArgs)
 	while (1) {
 		mDOS.Wait();
 
-		MOVE_CURSOR(38, 0);
+		MOVE_CURSOR(40, 0);
 		timeStamp(mytimeStamp);
 		printf("%s", mytimeStamp);
 
@@ -216,7 +225,6 @@ UINT __stdcall tankThread(void *ThreadArgs)
 		while(i < 4){
 			if (fuelTanks.readAmount(i) <= 200) {
 
-
 				//ms2 = duration_cast<  seconds >(system_clock::now().time_since_epoch()).count();
 				//time_span = ms2 - ms1; 
 				//if (time_span >= 1) {
@@ -229,7 +237,7 @@ UINT __stdcall tankThread(void *ThreadArgs)
 					mDOS.Wait();
 					MOVE_CURSOR(38, (5 + i));
 				  //printf("|  %.2f                   \n", fuelTanks.getPrice(0), fuelTanks.readAmount(0));
-					printf("| %.2f  RE-FUEL          \n ", fuelTanks.readAmount(i));
+					printf("|                         \n ", fuelTanks.readAmount(i));
 					fflush(stdout);
 					mDOS.Signal();
 				}
@@ -245,8 +253,6 @@ UINT __stdcall tankThread(void *ThreadArgs)
 				}
 			}
 			else {
-				//prevLow = currLow;
-				//currLow = false;
 				if (1) {
 					mDOS.Wait();
 					MOVE_CURSOR(38, (5 + i));
@@ -262,6 +268,9 @@ UINT __stdcall tankThread(void *ThreadArgs)
 			i++; 
 		}
 
+		if ( (fuelTanks.readAmount(0) > 200) && (fuelTanks.readAmount(1) > 200) && (fuelTanks.readAmount(2) > 200) && (fuelTanks.readAmount(3) > 200)) {
+		lowTank.Signal();
+		}
 	}
 
 	return 0;									// thread ends here
@@ -379,8 +388,10 @@ bool doCommand(std::string commandBuff, Tank* tanks) {
 			if (commandBuff[0] == 'f') {
 				index = std::stoi(commandBuff.substr(1, string::npos));
 				tanks->setAmount(500, (index - 1));
-				CCondition lowTank("lowTank");
-				lowTank.Signal();
+				/*CCondition lowTank("lowTank");
+				if ( (tanks->readAmount(0) > 200) && (tanks->readAmount(1) > 200) && (tanks->readAmount(2) > 200) && (tanks->readAmount(3) > 200)) {
+					lowTank.Signal();
+				}*/
 			}
 		}
 	}
@@ -435,7 +446,7 @@ int	main()
 	if (GSC_DEBUG) { printf("Creating Customer child proccess....\n"); }
 	CProcess p1("C:\\Users\\jmvsu\\OneDrive\\Documents\\School_Fall_2018\\cpen_333\\Assignment_1\\Gas_Station_Assignment1\\Debug\\Customers.exe",	// pathlist to child program executable				
 		NORMAL_PRIORITY_CLASS,			// priority
-		OWN_WINDOW,						// process has its own window					
+		PARENT_WINDOW,						// process has its own window					
 		ACTIVE							// process is active immediately
 	);
 
@@ -450,8 +461,6 @@ int	main()
 	//creating GSC/PUMP datapools and create the corresponding thread object in suspended state
 	if (GSC_DEBUG) { printf("Creating fuelTanks and GSC/Pump threads....\n"); }
 	Tank *tanks = new Tank();
-	CCondition lowTank("lowTank");
-	lowTank.Signal();
 	int num1 =1;
 	int num2 = 2;
 	int num3 = 3;
@@ -535,9 +544,9 @@ int	main()
 
 	printf("ACTION MENU: \n");
 	printf("Enter 't' + 'h' to view transaction history \n");
-	printf("Enter 'p'+ (Tank Number) + (Price in dollars) to set price per liter of fuel between 0.00 and 9.99. \n");
-	printf("       For example 'f31.00' sets the fuel in tank 3 to $1.00 per liter. \n");
-	printf("       Note price MUST be entered as [dollar].[cent][cent] e.g. 1.00 or 2.39  \n");
+	printf("Enter 'p'+ (Tank Number) + (Price in dollars) to set price per liter of fuel \n");
+	printf("       For example 'p31.00' sets the fuel in tank 3 to $1.00 per liter. \n");
+	printf("       Price can be any whole or decimal number.  \n");
 	printf("Enter 'e' + (Pump Number) to authorize/enable a pump to pump gas.\n");
 	printf("       Note that pumps will automatically be disabled after pumping \n       the authorized amount of gas, \n");
 	printf("       or if the tank being pumped from runs out of gas.\n");

@@ -14,6 +14,7 @@ private:
 	int _myNumber;
 	//int _pumpNumber; //memory leak? since only the pointer is ever getting passed, i dont think so?
 	struct customerInfo _info; 
+	bool _cust_DEBUG = false; 
 	
 	int main(void);
 

@@ -1,3 +1,2 @@
-﻿  Pump.cpp
-c:\users\jmvsu\onedrive\documents\school_fall_2018\cpen_333\assignment_1\gas_station_assignment1\pumps\pump.cpp(93): warning C4244: 'initializing': conversion from '__int64' to 'long', possible loss of data
+﻿  tank.cpp
   Pumps.vcxproj -> C:\Users\jmvsu\OneDrive\Documents\School_Fall_2018\cpen_333\Assignment_1\Gas_Station_Assignment1\Debug\Pumps.exe
