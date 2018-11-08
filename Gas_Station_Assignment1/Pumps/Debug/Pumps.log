@@ -1,2 +1,6 @@
-﻿  tank.cpp
+﻿  Pump.cpp
+c:\users\jmvsu\onedrive\documents\school_fall_2018\cpen_333\assignment_1\gas_station_assignment1\pumps\pump.cpp(91): warning C4244: 'initializing': conversion from '__int64' to 'long', possible loss of data
+c:\users\jmvsu\onedrive\documents\school_fall_2018\cpen_333\assignment_1\gas_station_assignment1\pumps\pump.cpp(146): warning C4552: '<': operator has no effect; expected operator with side-effect
+  Pumps_main.cpp
+  Generating Code...
   Pumps.vcxproj -> C:\Users\jmvsu\OneDrive\Documents\School_Fall_2018\cpen_333\Assignment_1\Gas_Station_Assignment1\Debug\Pumps.exe

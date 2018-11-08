@@ -1,6 +1,8 @@
 //Justine Sultan
 //Student Number 35880146
 
+//Monitor class for Fuel Tanks
+
 #ifndef   __Tank__
 #define   __Tank__
 
@@ -9,12 +11,9 @@
 
 class Tank {
 private:
-	//mutex will protect entire datapool 
 	struct tankData{	
-
-		float _price[4]; //array of prices
+		float _price[4]; 
 		double tankArray[4]; 
-		//have tanks 0 through 3
 		
 	};
 
@@ -25,12 +24,12 @@ private:
 public:
 	Tank(void);
 	~Tank(void);
-	bool pumpLiters(double liters, int tank); //decrements liters from tank. return 1 if successful, return 0 if fuel tank ran empty
-	bool decrement(int tank);		//decrement 0.5 liters from tank. return 1 if succesful, return 0 if fuel tank ran empty 
-	void setAmount(double amount,int tank);		//set tank to amount
-	double readAmount(int tank);		//reads literAmount in tank
-	void setPrice(float price, int tank);			//set price per liter for specified tank
-	float getPrice(int tank);		//returns price of specified tank
+	bool pumpLiters(double liters, int tank);		//Decrements liters from tank. Return 1 if successful, return 0 if fuel tank ran empty
+	bool decrement(int tank);						//Decrement 0.5 liters from tank. Return 1 if succesful, return 0 if fuel tank ran empty 
+	void setAmount(double amount,int tank);			//Set tank to amount
+	double readAmount(int tank);					//Reads amount in tank. Returns amount
+	void setPrice(float price, int tank);			//Set price per liter for specified tank
+	float getPrice(int tank);						//Returns price of specified tank
 };
 
 #endif 

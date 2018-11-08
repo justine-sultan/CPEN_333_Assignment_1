@@ -1,6 +1,8 @@
 //Justine Sultan
 //Student Number: 35880146
 
+//Active object class for customers of gas station
+
 #ifndef   __Customer__
 #define   __Customer__
 
@@ -12,7 +14,6 @@ class Customer : public ActiveClass{
 
 private:
 	int _myNumber;
-	//int _pumpNumber; //memory leak? since only the pointer is ever getting passed, i dont think so?
 	struct customerInfo _info; 
 	bool _cust_DEBUG = false; 
 	

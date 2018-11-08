@@ -8,8 +8,7 @@
 #include    "..\GSDataStructures.h"
 #include	"Pump.h"
 
-//CRendezvous   r1("MyRendezvous", 6) dont need this here - it is inside pump.cpp mains
-CRendezvous		r2("EndRendezvous", 3); //to synchronize termination of 3 processes
+CRendezvous		r2("EndRendezvous", 3);		//Event to synchronize termination of 3 processes (GSC, pump, and customer)
 
 struct 	    mydatapooldata {
 	int studentNumber;
@@ -21,8 +20,8 @@ int   main()
 {
 	CMutex  mDOS("pump_DOS_window");
 
-	//set up DOS window:
-	int init = -1;	//placeholder to check cursor placement
+	//Set up DOS window:
+	int init = -1;	
 	mDOS.Wait();
 	MOVE_CURSOR(0, 0);
 	printf("CUSTOMER PUMP DISPLAY \n\n");
@@ -119,9 +118,6 @@ int   main()
 	Pump pump4(4, pump4dp, pump4pipe);
 	pump4.Resume();
 
-	//test area for lab3/4 ------------------
-	
-	//end test area ---------------
 	pump1.WaitForThread(); 
 
 	r2.Wait(); 

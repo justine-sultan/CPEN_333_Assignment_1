@@ -1,13 +1,13 @@
 //Justine Sultan
 //Student Number 35880146
 
+//Monitor class for Fuel Tanks
+
 #include <stdio.h>
 #include "rt.h"
 #include "tank.h"
 
 Tank::Tank(void) {
-	//printf("Entering default Tank constructor...\n");
-
 	_mutex = new CMutex("tankMutex");
 	_dp = new CDataPool("tankDP", sizeof(struct tankData));
 	_data = (struct tankData*)(_dp->LinkDataPool());
@@ -19,9 +19,8 @@ Tank::Tank(void) {
 		_data->_price[i] = 1.00;
 	}
 
-	//DONT INTITIALIZE SHARED DATA  - (e.g. for datapool) 
-	//or else datatpool data could be overwritten whenever instantiate new object
-
+	//NOTE: Datapool data willl be overwritten when new object instantiated!
+	//All tank objects MUST be created before process/thread rendevous at start.
 }
 
 Tank::~Tank() {
@@ -29,56 +28,56 @@ Tank::~Tank() {
 }
 
 bool Tank::pumpLiters(double liters, int tank) {
-	_mutex->Wait();			// gain access to resource
+	_mutex->Wait();		
 	
 	if (liters <= _data->tankArray[tank]) 
 	{
 		double num = _data->tankArray[tank];
 		num = num - liters;
-		_data->tankArray[tank] = num;	// update resource
-		_mutex->Signal();		// release resource
+		_data->tankArray[tank] = num;	
+		_mutex->Signal();		
 		return true; 
 	}
 	else 
 	{
-		_data->tankArray[tank] = 0;	// update resource
-		_mutex->Signal();		// release resource
+		_data->tankArray[tank] = 0;	
+		_mutex->Signal();		
 		return false;
 	}
 
 }
 
 bool Tank::decrement(int tank) {
-	_mutex->Wait();			// gain access to resource
+	_mutex->Wait();			
 
 	if (0.5 <= _data->tankArray[tank])
 	{
 		double num = _data->tankArray[tank];
 		num = num - 0.5;
-		_data->tankArray[tank] = num;	// update resource
-		_mutex->Signal();		// release resource
+		_data->tankArray[tank] = num;	
+		_mutex->Signal();		
 		return true;
 	}
 	else
 	{
-		_data->tankArray[tank] = 0;	// update resource
-		_mutex->Signal();		// release resource
+		_data->tankArray[tank] = 0;	
+		_mutex->Signal();		
 		return false;
 	}
 
 }
 
 void Tank::setAmount(double amount, int tank) {
-	_mutex->Wait();			// gain access to resource
-	_data->tankArray[tank] = amount;	// update resource
-	_mutex->Signal();		// release resource
+	_mutex->Wait();			
+	_data->tankArray[tank] = amount;	
+	_mutex->Signal();		
 	return;
 }
 
 double Tank::readAmount(int tank) {
-	_mutex->Wait();			// gain access to resource
-	double num = _data->tankArray[tank];	// update resource
-	_mutex->Signal();		// release resource
+	_mutex->Wait();			
+	double num = _data->tankArray[tank];	
+	_mutex->Signal();		
 	return num;
 }
 

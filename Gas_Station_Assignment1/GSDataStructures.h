@@ -9,27 +9,27 @@
 #include <stdio.h>
 
 struct pumpDatapool{
-	char name[20];	//names must be 19 characters or less (this accounts for null character)
+	char name[20];	
 	int creditCard;
-	int fuelType;	//type 0-4
+	int fuelType;		//Type selection: 0-4
 	int fuelAmount; 
 	char timeStamp[100]; 
 };
 
 struct customerInfo {
-	char name[20];	//names must be 19 characters or less (this accounts for null character)
+	char name[20];	
 	int creditCard;
-	int fuelType;
+	int fuelType;		//Type selection: 0-4
 	int fuelAmount;
-	int pump;	//chose which pump they go to: 1,2,3 or 4
+	int pump;			//Pump selection: 1-4
 };
 
 struct transaction {
-	char name[20];	//names must be 19 characters or less (this accounts for null character)
+	char name[20];	
 	int creditCard;
-	int fuelType;
+	int fuelType;		//Type selection: 0-4
 	int fuelAmount;
-	int pump;	//chose which pump they go to: 1,2,3 or 4
+	int pump;			//Pump selection: 1-4
 	char timeStamp[100];
 };
 
